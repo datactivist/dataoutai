@@ -18,3 +18,8 @@ class Api:
     @abstractmethod
     def get_data(self):
         pass
+
+
+def dump_to_json(file_path: str, data: dict):
+    with open(file_path, "w", encoding="utf8") as f:
+        json.dump(data, fp=f)
