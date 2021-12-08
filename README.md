@@ -21,3 +21,15 @@ En fin de session :
 ```sh
 conda deactivate
 ```
+
+## Récupération des données
+
+### DataSud
+
+```python
+from api import DataSud, dump_to_json
+
+data_sud = DataSud()
+datasets = data_sud.get_data()
+dump_to_json("data/datasud.json", datasets)
+```
