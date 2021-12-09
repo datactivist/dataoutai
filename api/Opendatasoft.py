@@ -1,6 +1,8 @@
 import asyncio
-import regex as re
 from typing import List
+
+import regex as re
+
 from api import Api
 
 
