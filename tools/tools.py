@@ -1,5 +1,6 @@
 import asyncio
 import functools
+import regex as re
 
 
 def run_in_executor(executor):
@@ -12,3 +13,12 @@ def run_in_executor(executor):
         return task_to_run
 
     return function_wrapper
+
+
+def remove_xml_tags(string: str):
+    """
+    Clean str of all XML tags or \n \t \r etc ...
+    :param string: String to clean
+    """
+    spacing = "\n|\t|\r"
+    return re.sub("<[^<]*?/?>|" + spacing, "", string)
