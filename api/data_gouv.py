@@ -67,9 +67,3 @@ class DataGouv(Api):
         loop = asyncio.new_event_loop()
         coroutine = self.__get_data()
         return loop.run_until_complete(coroutine)
-
-
-if __name__ == "__main__":
-    data_gouv = DataGouv()
-    data = data_gouv.get_data()
-    dump_to_json("data_gouv.json", data)
