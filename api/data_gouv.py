@@ -52,7 +52,8 @@ class DataGouv(Api):
         """
         result = await asyncio.gather(
             *map(
-                self.get_one_page, range(1, self.number_of_datasets // self.page_size),
+                self.get_one_page,
+                range(1, self.number_of_datasets // self.page_size),
             )
         )
 
