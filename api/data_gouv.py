@@ -39,6 +39,7 @@ class DataGouv(Api):
                     "keywords": [tag for tag in dataset["tags"]],
                     "description": dataset["description"],
                 },
+                "columns": [],
             }
             for dataset in page_data["data"]
         ]
