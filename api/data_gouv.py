@@ -56,7 +56,7 @@ class DataGouv(Api):
             )
         )
 
-        return {"count": self.number_of_datasets, "datasets": result}
+        return {"count": len(result), "datasets": result}
 
     def get_data(self) -> dict:
         """
