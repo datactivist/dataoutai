@@ -1,7 +1,6 @@
-from api import dump_to_json
-from api import Api
-
 import asyncio
+
+from api import Api
 
 
 class DataGouv(Api):
