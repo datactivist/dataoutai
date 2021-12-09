@@ -1,7 +1,8 @@
 import asyncio
 from typing import List
-from tools import remove_xml_tags
+
 from api import Api
+from tools import remove_xml_tags
 
 
 class Opendatasoft(Api):
