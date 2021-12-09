@@ -1,10 +1,14 @@
+import concurrent.futures
 import json
 import urllib.request
 from abc import abstractmethod
+
 from tools import run_in_executor
 
 
 class Api:
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=120)
+
     def __init__(self, base_url: str):
         """
         Instantiate an API to fetch resources
@@ -15,7 +19,7 @@ class Api:
         else:
             self.base_url = base_url
 
-    @run_in_executor
+    @run_in_executor(executor)
     def __get_from_url(self, path: str):
         """
         Calls an API endpoint with a GET request
