@@ -1,8 +1,9 @@
 import asyncio
-from urllib.error import HTTPError
 from typing import List
+from urllib.error import HTTPError, URLError
 
 from api import Api
+from tools import remove_xml_tags
 
 
 class DataSud(Api):
@@ -21,6 +22,8 @@ class DataSud(Api):
             return []
 
     async def get_columns(self, resources):
+        column_names = set()
+        columns = []
         for resource in resources:
             if resource["format"] != "CSV":
                 continue
@@ -30,10 +33,16 @@ class DataSud(Api):
                 )
                 if not response["success"]:
                     continue
-                return response["result"]["fields"]
+                for column in response["result"]["fields"]:
+                    if column["id"] in column_names:
+                        continue
+                    column_names.add(column["id"])
+                    columns.append(column)
             except HTTPError:
                 continue
-        return []
+            except URLError:
+                print(resource["id"])
+        return columns
 
     async def get_dataset_details(self, dataset):
         """
@@ -62,7 +71,7 @@ class DataSud(Api):
                 "keywords": [
                     tag["name"] for tag in details["tags"] if tag["state"] == "active"
                 ],
-                "description": details["notes"],
+                "description": remove_xml_tags(details["notes"]),
             },
             "columns": columns,
         }
