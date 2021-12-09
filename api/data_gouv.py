@@ -1,6 +1,7 @@
 import asyncio
 
 from api import Api
+from tools import remove_xml_tags
 
 
 class DataGouv(Api):
@@ -36,7 +37,7 @@ class DataGouv(Api):
                 "dataset_name": dataset["title"],
                 "metadata": {
                     "keywords": [tag for tag in dataset["tags"]],
-                    "description": dataset["description"],
+                    "description": remove_xml_tags(dataset["description"]),
                 },
                 "columns": [],
             }
@@ -51,8 +52,7 @@ class DataGouv(Api):
         """
         result = await asyncio.gather(
             *map(
-                self.get_one_page,
-                range(1, self.number_of_datasets // self.page_size),
+                self.get_one_page, range(1, self.number_of_datasets // self.page_size),
             )
         )
 
