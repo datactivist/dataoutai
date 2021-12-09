@@ -41,7 +41,7 @@ from api import DataGouv, dump_to_json
 
 data_gouv = DataGouv()
 datasets = data_gouv.get_data()
-dump_to_json("data/datasud.json", datasets)
+dump_to_json("data/datagouv.json", datasets)
 ```
 
 ### Opendatasoft
