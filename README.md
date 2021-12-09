@@ -33,3 +33,13 @@ data_sud = DataSud()
 datasets = data_sud.get_data()
 dump_to_json("data/datasud.json", datasets)
 ```
+
+### Opendatasoft
+
+```python
+from api import Opendatasoft, dump_to_json
+
+open_data_soft = Opendatasoft()
+datasets = open_data_soft.get_data()
+dump_to_json("data/opendatasoft.json", datasets)
+```
