@@ -1,9 +1,8 @@
 import asyncio
 from typing import List
 
-import regex as re
-
 from api import Api
+from tools import remove_xml_tags
 
 
 class Opendatasoft(Api):
@@ -37,7 +36,6 @@ class Opendatasoft(Api):
         """
         datasets = await self.fetch(dataset_url)
         clean_data = []
-        nl = "\n"
         for dataset in datasets["datasets"]:
             clean_data.append(
                 {
@@ -55,7 +53,7 @@ class Opendatasoft(Api):
                         ],
                         "description": ""
                         if dataset["dataset"]["metas"]["default"]["description"] is None
-                        else f'{re.sub("<[^<]*?/?>|" + nl, "", dataset["dataset"]["metas"]["default"]["description"])}',
+                        else f'{remove_xml_tags(dataset["dataset"]["metas"]["default"]["description"])}',
                     },
                     "columns": [
                         {"name": annotation["name"], "type": annotation["type"]}

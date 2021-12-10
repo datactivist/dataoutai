@@ -1,1 +1,1 @@
-from .tools import run_in_executor
+from .tools import run_in_executor, remove_xml_tags
