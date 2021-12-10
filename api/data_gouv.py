@@ -27,6 +27,7 @@ class DataGouv(Api):
         :param page_number: an integer corresponding to the page to be fetched
         :return: a list containing the datasets info featured on the query page number
         """
+        print(page_number)
         page_data = await self.fetch(
             f"/datasets/?page_size={self.page_size}&page={page_number}"
         )
@@ -52,11 +53,16 @@ class DataGouv(Api):
         result = await asyncio.gather(
             *map(
                 self.get_one_page,
-                range(1, self.number_of_datasets // self.page_size),
+                range(1, self.number_of_datasets // self.page_size - 1),
             )
         )
 
-        return {"count": len(result), "datasets": result}
+        result = [dataset for dataset_list in result for dataset in dataset_list]
+
+        return {
+            "count": len(result),
+            "datasets": result,
+        }
 
     def get_data(self) -> dict:
         """
