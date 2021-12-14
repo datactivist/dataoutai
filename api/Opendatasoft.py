@@ -41,14 +41,12 @@ class Opendatasoft(Api):
                 {
                     "dataset_name": f'{dataset["dataset"]["dataset_id"]}',
                     "metadata": {
-                        "keywords": [
-                            []
-                            if dataset["dataset"]["metas"]["default"]["keyword"] is None
-                            else [
-                                keyword
-                                for keyword in dataset["dataset"]["metas"]["default"][
-                                    "keyword"
-                                ]
+                        "keywords": []
+                        if dataset["dataset"]["metas"]["default"]["keyword"] is None
+                        else [
+                            keyword
+                            for keyword in dataset["dataset"]["metas"]["default"][
+                                "keyword"
                             ]
                         ],
                         "description": ""
