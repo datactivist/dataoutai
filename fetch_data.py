@@ -36,29 +36,32 @@ if __name__ == "__main__":
     parser.add_argument(
         "-o",
         "--open-data-soft",
-        help="Fetch from Open Data Soft",
-        action="store_true",
+        help="Don't fetch from Open Data Soft",
+        action="store_false",
         default=True,
     )
     parser.add_argument(
         "-s",
         "--data-sud",
-        help="Fetch from Data Sud",
-        action="store_true",
+        help="Don't fetch from Data Sud",
+        action="store_false",
         default=True,
     )
     parser.add_argument(
         "-g",
         "--data-gouv",
-        help="Fetch from Data Gouv",
-        action="store_true",
+        help="Don't fetch from Data Gouv",
+        action="store_false",
         default=True,
     )
     args = parser.parse_args()
 
     if args.open_data_soft:
+        print("Fetching from Open Data Soft")
         get_open_data_soft()
     if args.data_sud:
+        print("Fetching from Data Sud")
         get_data_sud()
     if args.data_gouv:
+        print("Fetching from Data Gouv")
         get_data_gouv()
