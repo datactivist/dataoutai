@@ -38,21 +38,21 @@ if __name__ == "__main__":
         "--open-data-soft",
         help="Fetch from Open Data Soft",
         action="store_true",
-        default=False,
+        default=True,
     )
     parser.add_argument(
         "-s",
         "--data-sud",
         help="Fetch from Data Sud",
         action="store_true",
-        default=False,
+        default=True,
     )
     parser.add_argument(
         "-g",
         "--data-gouv",
         help="Fetch from Data Gouv",
         action="store_true",
-        default=False,
+        default=True,
     )
     args = parser.parse_args()
 
