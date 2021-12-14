@@ -22,7 +22,6 @@ class DataSud(Api):
             return []
 
     async def get_columns(self, resources):
-        column_names = set()
         columns = []
         for resource in resources:
             if resource["format"] != "CSV":
@@ -34,22 +33,28 @@ class DataSud(Api):
                 if not response["success"]:
                     continue
                 for column in response["result"]["fields"]:
-                    if column["id"] in column_names:
+                    if column in columns:
                         continue
-                    column_names.add(column["id"])
                     columns.append(column)
             except HTTPError:
                 continue
             except URLError:
-                print(resource["id"])
+                continue
         return columns
 
     async def get_dataset_details(self, dataset):
         """
         Get the important dataset details:
         - Name
-        - Keywords
-        - Description
+        - Maintainer
+        - Author
+        - Licence
+        - Update frequency
+        - Geographical granularity
+        - Metadata
+            - Keywords
+            - Description
+            - Groups
         - Columns
         :param dataset: The name of the dataset to get
         :return: The dataset important details
@@ -58,20 +63,29 @@ class DataSud(Api):
             details = await self.fetch(f"/package_show?id={dataset}")
         except HTTPError:
             return
-        if not details["success"]:
+
+        def extract_field(column, default=None):
+            return details.get(column, default)
+
+        if not extract_field("success"):
             return
-        details = details["result"]
-        try:
-            columns = await self.get_columns(details["resources"])
-        except HTTPError:
-            columns = []
+        details = extract_field("result")
+
+        columns = await self.get_columns(details["resources"])
+
         return {
             "dataset_name": details["name"],
+            "maintainer": extract_field("maintainer"),
+            "author": details["author"],
+            "licence": extract_field("licence"),
+            "frequency": extract_field("frequency"),
+            "geographic_hold": extract_field("granularity"),
             "metadata": {
                 "keywords": [
                     tag["name"] for tag in details["tags"] if tag["state"] == "active"
                 ],
                 "description": remove_xml_tags(details["notes"]),
+                "groups": [group["title"] for group in details["groups"]],
             },
             "columns": columns,
         }
