@@ -26,8 +26,13 @@ class Opendatasoft(Api):
         ]
 
     def __check_frequency(self, frequency: str):
-        if frequency.startswith("http"):
-            return frequency.split("/")[-1]
+        if frequency:
+            if frequency.startswith("http"):
+                return frequency.split("/")[-1]
+            else:
+                return frequency
+        else:
+            return None
 
     async def get_dataset_details(self, dataset_url: str) -> List[dict]:
         """
@@ -45,11 +50,7 @@ class Opendatasoft(Api):
                 if "dcat" not in dataset["dataset"]["metas"]:
                     pass
                 else:
-                    print(
-                        self.__check_frequency(
-                            dataset["dataset"]["metas"]["dcat"]["accrualperiodicity"]
-                        )
-                    )
+                    pass
             clean_data = []
             for dataset in datasets["datasets"]:
                 clean_data.append(
@@ -68,11 +69,9 @@ class Opendatasoft(Api):
                         else dataset["dataset"]["metas"]["default"]["licence"],
                         "frequency": None
                         if "accrualperiodicity"
-                        not in dataset["dataset"]["metas"]["default"]["dcat"]
+                        not in dataset["dataset"]["metas"]["dcat"]
                         else self.__check_frequency(
-                            dataset["dataset"]["metas"]["default"]["dcat"][
-                                "accrualperiodicity"
-                            ]
+                            dataset["dataset"]["metas"]["dcat"]["accrualperiodicity"]
                         ),
                         "geographic_hold": None
                         if "territory" not in dataset["dataset"]["metas"]["default"]
@@ -80,12 +79,7 @@ class Opendatasoft(Api):
                         "metadata": {
                             "keywords": None
                             if dataset["dataset"]["metas"]["default"]["keyword"] is None
-                            else [
-                                keyword
-                                for keyword in dataset["dataset"]["metas"]["default"][
-                                    "keyword"
-                                ]
-                            ],
+                            else dataset["dataset"]["metas"]["default"]["keyword"],
                             "description": None
                             if dataset["dataset"]["metas"]["default"]["description"]
                             is None
