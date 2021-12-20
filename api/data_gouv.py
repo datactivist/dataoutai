@@ -28,7 +28,6 @@ class DataGouv(Api):
         :param page_number: an integer corresponding to the page to be fetched
         :return: a list containing the datasets info featured on the query page number
         """
-        print(page_number)
         page_data = await self.fetch(
             f"/datasets/?page_size={self.page_size}&page={page_number}"
         )
