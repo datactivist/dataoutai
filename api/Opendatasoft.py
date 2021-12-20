@@ -46,11 +46,6 @@ class Opendatasoft(Api):
         """
         try:
             datasets = await self.fetch(dataset_url)
-            for dataset in datasets["datasets"]:
-                if "dcat" not in dataset["dataset"]["metas"]:
-                    pass
-                else:
-                    pass
             clean_data = []
             for dataset in datasets["datasets"]:
                 clean_data.append(
