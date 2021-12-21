@@ -43,7 +43,7 @@ class DataGouv(Api):
                 for column in columns:
                     if column in columns:
                         continue
-                    columns.append(column)
+                    columns.append(column, "")
             except URLError:
                 continue
         return columns
@@ -78,7 +78,12 @@ class DataGouv(Api):
                     "description": remove_xml_tags(dataset["description"]),
                     "groups": [],
                 },
-                "columns": await self.get_columns(dataset["resources"]),
+                "columns": [
+                    {"name": column_name, "type": var_type}
+                    for column_name, var_type in await self.get_columns(
+                        dataset["resources"]
+                    )
+                ],
             }
             for dataset in page_data["data"]
         ]
