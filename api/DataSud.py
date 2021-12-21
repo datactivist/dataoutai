@@ -74,7 +74,7 @@ class DataSud(Api):
         columns = await self.get_columns(details["resources"])
 
         return {
-            "dataset_name": details["name"],
+            "dataset_name": details["title"],
             "maintainer": extract_field("maintainer"),
             "author": details["author"],
             "licence": extract_field("licence"),
