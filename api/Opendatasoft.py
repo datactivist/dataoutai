@@ -50,7 +50,7 @@ class Opendatasoft(Api):
             for dataset in datasets["datasets"]:
                 clean_data.append(
                     {
-                        "dataset_name": f'{dataset["dataset"]["dataset_id"]}',
+                        "dataset_name": f'{dataset["dataset"]["metas"]["default"]["title"]}',
                         "maintainer": None
                         if "custom" not in dataset["dataset"]["metas"]["default"]
                         else dataset["dataset"]["metas"]["default"]["custom"][
