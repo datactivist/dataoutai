@@ -3,8 +3,10 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - bokeh~=2.4.2
   - python~=3.7.12
   - matplotlib
+  - networkx~=2.6.3
   - notebook
   - numpy
   - pandas~=1.1.5
@@ -13,5 +15,6 @@ dependencies:
   - scipy
   - seaborn~=0.11.2
   - pip
+  - pyvis~=0.1.9
   - pip:
     - black
