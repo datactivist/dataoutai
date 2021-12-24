@@ -16,5 +16,6 @@ dependencies:
   - seaborn~=0.11.2
   - pip
   - pyvis~=0.1.9
+  - pydantic~=1.8.2
   - pip:
     - black
