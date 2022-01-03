@@ -44,21 +44,18 @@ class BaselineWord2Vec:
 
     def build_corpus_from_data(self):
         """
-        This method organizes all the text contained in the loaded datasets info in a single list of strings. Each
-        string represents one unique dataset.
+        This method organizes all the text contained in the loaded datasets info in a single list of strings, except for
+        the dataset description. Each string represents one unique dataset.
 
         :return: None
         """
         self.words = []
         for dataset in self.data:
             dataset_as_string = ""
-            if dataset["metadata"]["description"] == "":
-                continue
-            dataset_as_string += dataset["metadata"]["description"]
             dataset_as_string += " ".join(dataset["metadata"]["keywords"])
-            dataset_as_string += dataset.get("author", "")
-            dataset_as_string += dataset.get("licence", "")
-            dataset_as_string += dataset.get("geographic_hold", "")
+            dataset_as_string += dataset["author"]
+            dataset_as_string += dataset["licence"]
+            dataset_as_string += dataset["geographic_hold"]
             tokens = re.split(r"(?u)\b[a-zA-Z_][a-zA-Z0-9_]+\b", dataset_as_string)
             self.words.append(tokens)
 
@@ -76,6 +73,8 @@ class BaselineWord2Vec:
 
     def get_k_nearest(self, dataset_index: int, k: int = 5, print_result: bool = True):
         """
+        This method computes and returns the names of the k-nearest neighbors of the provided dataset with respect to
+        the cosine similarity.
 
         :param dataset_index: an integer, the index of the dataset from which to compute the similarities
         :param k: an integer, the number of "near" datasets to return
