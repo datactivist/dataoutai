@@ -57,13 +57,19 @@ def find_closest_match(
 
 
 if __name__ == "__main__":
-    datasets = load_json("../../data/datasud.json")
-    open_truc = load_json("../../data/opendatasoft.json")
-    datasets["count"] += open_truc["count"]
-    datasets["datasets"] += open_truc["datasets"]
-    # data_gouv = load_json("../../data/datagouv.json")
-    # datasets["count"] += data_gouv["count"]
-    # datasets["datasets"] += data_gouv["datasets"]
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Fetch data from APIs")
+    parser.add_argument(
+        "-s",
+        "--source",
+        help="Use specific data source",
+        choices=["datasud", "opendatasoft", "datagouv"],
+        required=True,
+    )
+    args = parser.parse_args()
+
+    datasets = load_json(f"../../data/{args.source}.json")
 
     corpus = build_corpus_from_dataset(datasets)
 
