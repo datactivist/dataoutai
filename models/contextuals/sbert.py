@@ -46,7 +46,7 @@ class ContextualEmbeddingModel:
         :param convert_to_numpy: If true, you get one large tensor as return. Overwrites any setting from convert_to_numpy (from SentenceTransformer)
         :param convert_to_tensor: If true, you get one large tensor as return. Overwrites any setting from convert_to_numpy (from SentenceTransformer)
         :param tags_filters: List of tags to include in the tf_idf representation default to
-        ["dataset_name", "keywords", "description", "groups"]
+        ["dataset_name", "keywords", "description"]
         :param random_data: Number of random data picked from the transformed datas
         """
         self.device = device
