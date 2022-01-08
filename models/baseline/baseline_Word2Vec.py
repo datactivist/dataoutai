@@ -1,17 +1,24 @@
 import re
 import json
+from typing import Dict
+
 import numpy as np
+import sklearn
 
 from gensim.models import Word2Vec
+from sklearn.cluster import AgglomerativeClustering
+
+from models.models_tools import filter_data
 
 
 class BaselineWord2Vec:
     def __init__(self, filepath: str):
         self.filepath = filepath
         self.data = []
-        self.words = []
+        self.transformed_data: list = []
+        self.transformed_data_ids: list = []
         self.vectorizer = None
-        self.transformed_datasets = []
+        self.embedding = []
 
         self.load_and_prepare()
 
@@ -26,21 +33,53 @@ class BaselineWord2Vec:
             for dataset in data:
                 self.data.append(dataset)
 
-    def load_and_prepare(self, filepath: str = ""):
+    def load_and_prepare(
+        self,
+        filepath: str = "",
+        tags_filters=None,
+        random_data: int = None,
+    ):
         """
         Load the data from the given filepath if not an empty string, else from the filepath attribute.
         Builds the corpus of texts and creates the Word2Vec vectorizer.
 
-        :param filepath: an optional parameter, a string indicating from where the data must be loaded
 
+        :param random_data:
+        :param filepath: an optional parameter, a string indicating from where the data must be loaded
+        :param tags_filters: List of tags to include in the tf_idf representation default to
+        ["dataset_name", "keywords", "description"]
+        :param random_data: Number of random data picked from the transformed datas
         :return: None
         """
+        if tags_filters is None:
+            tags_filters = ["dataset_name", "keywords", "description"]
+
         if filepath != "":
             self.filepath = filepath
 
         self.load_json()
-        self.build_corpus_from_data()
+        filtered_data = filter_data(self.filepath, tags_filters, random_data)
+        self.transformed_data = list(filtered_data.values())
+        self.transformed_data_ids = list(filtered_data.keys())
         self.vectorize()
+
+    def kmean_clustering(
+        self,
+        clustering_model: sklearn.cluster = AgglomerativeClustering(n_clusters=10),
+    ) -> Dict:
+        """
+        Compute cluster given a skelarn clustering model
+        :param clustering_model: A cluster model from sklearn.cluster
+        :return: A dict of clustered datas from the actual embedding
+        """
+        clustering_model.fit(self.embedding)
+        cluster_assignment = clustering_model.labels_
+
+        clustered_sentences = {}
+        for sentence_id, cluster_id in enumerate(cluster_assignment):
+            clustered_sentences[self.transformed_data_ids[sentence_id]] = cluster_id
+
+        return clustered_sentences
 
     def build_corpus_from_data(self):
         """
@@ -65,10 +104,12 @@ class BaselineWord2Vec:
 
         :return: None
         """
-        self.vectorizer = Word2Vec(self.words, min_count=1, vector_size=100, window=10)
-        self.transformed_datasets = [
-            np.mean([self.vectorizer.wv[word] for word in dataset])
-            for dataset in self.words
+        self.vectorizer = Word2Vec(
+            self.transformed_data, min_count=1, vector_size=100, window=10
+        )
+        self.embedding = [
+            [np.mean([self.vectorizer.wv[word] for word in dataset])]
+            for dataset in self.transformed_data
         ]
 
     def get_k_nearest(self, dataset_index: int, k: int = 5, print_result: bool = True):
@@ -83,11 +124,11 @@ class BaselineWord2Vec:
         :return: an array containing the names of the k nearest datasets from the given dataset
         """
         similarities = []
-        target_dataset = self.transformed_datasets[dataset_index]
+        target_dataset = self.embedding[dataset_index]
 
         a = np.linalg.norm(target_dataset)
 
-        for index, dataset in enumerate(self.transformed_datasets):
+        for index, dataset in enumerate(self.embedding):
             if index != dataset_index:
                 b = np.linalg.norm(dataset)
                 similarities.append(
