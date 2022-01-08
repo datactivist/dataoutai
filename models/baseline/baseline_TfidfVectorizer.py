@@ -1,10 +1,10 @@
 import json
-from typing import Tuple, Dict, Generator, List
+from typing import Tuple, List
 
 from scipy.sparse import csr_matrix
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
-
+from models.models_tools import filter_data
 from pydantic import BaseModel
 import joblib
 
@@ -14,44 +14,6 @@ class BaseConfiguration(BaseModel):
     source: str = ""
     configuration: List[str] = []
     vectorizer_path: str = ""
-
-
-def _flatten_dict_gen(d: Dict) -> Generator:
-    for k, v in d.items():
-        new_key = k
-        if isinstance(v, Dict):
-            yield from flatten_dict(v).items()
-        else:
-            yield new_key, v
-
-
-def flatten_dict(d: Dict) -> Dict:
-    return dict(_flatten_dict_gen(d))
-
-
-def filter_data(file_path: str, tags_filters: List[str]):
-    """
-    Filter the datas to the original dataset to string for the tfidf vectorizer
-    :parameter file_path: The path of the .json datasets file
-    :parameter tags_filters: List of tags to include in the transformed datas
-    """
-    with open(file_path, encoding="utf8") as f:
-        datas = json.load(f)
-
-    datasets = datas["datasets"]
-    tags = {tag: "" for tag in tags_filters}
-    transformed_data = []
-    for d in datasets:
-        flatten_d = flatten_dict(d)
-        for tag in tags:
-            if type(flatten_d[tag]) is list:
-                tags[tag] = " ".join(flatten_d[tag])
-            else:
-                tags[tag] = flatten_d[tag]
-
-        transformed_data.append(" ".join(filter(None, tags.values())))
-
-    return transformed_data
 
 
 class TfidfBaseline:
@@ -144,7 +106,6 @@ class TfidfBaseline:
             strip_accents="unicode",
             lowercase=True,
             analyzer="word",
-            # stop_words=fr_stop,
             token_pattern=r"(?u)\b[a-zA-Z_][a-zA-Z0-9_]+\b",
             ngram_range=(1, 2),
             max_features=max_features,
@@ -154,15 +115,5 @@ class TfidfBaseline:
             sublinear_tf=True,
         )
 
-        self.transformed_data = filter_data(self.file_path, tags_filters)
+        self.transformed_data = filter_data(self.file_path, tags_filters).values()
         self.tfidf_matrix = self.tfidf_vectorizer.fit_transform(self.transformed_data)
-
-
-# tfidf = TfidfBaseline("../../data/opendatasoft.json")
-# tfidf.compute_tfidf(500)
-# tfidf.get_similarity(352)
-# tfidf.save_configuration("test")
-#
-# tfidf_test = TfidfBaseline()
-# tfidf_test.load_configuration("test.json")
-# tfidf_test.get_similarity(352)
