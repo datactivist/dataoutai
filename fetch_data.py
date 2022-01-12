@@ -1,7 +1,8 @@
-import time
 import argparse
+import time
 
-from api import dump_to_json, DataSud, Opendatasoft, DataGouv
+from api import DataSud, Opendatasoft, DataGouv
+from tools import dump_to_json
 
 
 def get_open_data_soft():
@@ -10,7 +11,9 @@ def get_open_data_soft():
     datasets = open_data_soft.get_data()
     end = time.time()
     dump_to_json("data/opendatasoft.json", datasets)
-    print(f"Fetched from Opendatasoft in {end - start}s")
+    print(
+        f"Fetched from Opendatasoft in {end - start}s with {open_data_soft.request_count} requests"
+    )
 
 
 def get_data_sud():
@@ -19,7 +22,9 @@ def get_data_sud():
     datasets = data_sud.get_data()
     end = time.time()
     dump_to_json("data/datasud.json", datasets)
-    print(f"Fetched from DataSud in {end - start}s")
+    print(
+        f"Fetched from DataSud in {end - start}s with {data_sud.request_count} requests"
+    )
 
 
 def get_data_gouv():
@@ -28,7 +33,9 @@ def get_data_gouv():
     datasets = data_gouv.get_data()
     end = time.time()
     dump_to_json("data/datagouv.json", datasets)
-    print(f"Fetched from DataGouv in {end - start}s")
+    print(
+        f"Fetched from DataGouv in {end - start}s with {data_gouv.request_count} requests"
+    )
 
 
 if __name__ == "__main__":
