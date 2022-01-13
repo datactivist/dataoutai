@@ -2,12 +2,17 @@ import asyncio
 from typing import List
 from urllib.error import HTTPError
 
-from api import Api
 from tools import remove_xml_tags
+from .api import Api
 
 
 class Opendatasoft(Api):
+    __metaclass__ = Api
+
     def __init__(self):
+        """
+        Instantiate the Open Data Soft API.
+        """
         super().__init__("https://data.opendatasoft.com/api/v2/catalog/")
 
     async def get_dataset_list(self, nb_per_query: int = 50) -> List[str]:
@@ -18,14 +23,15 @@ class Opendatasoft(Api):
         """
         if nb_per_query > 100:
             nb_per_query = 100
-        response = await self.fetch("/datasets?limit=1&offset=0")
+        response = await self.fetch_json("/datasets?limit=1&offset=0")
         count = response["total_count"]
         return [
             f"/datasets?limit={nb_per_query}&offset={offset}"
             for offset in range(0, count, nb_per_query)
         ]
 
-    def __check_frequency(self, frequency: str):
+    @staticmethod
+    def __check_frequency(frequency: str):
         if frequency:
             if frequency.startswith("http"):
                 return frequency.split("/")[-1]
@@ -45,7 +51,7 @@ class Opendatasoft(Api):
         :return: The dataset important details
         """
         try:
-            datasets = await self.fetch(dataset_url)
+            datasets = await self.fetch_json(dataset_url)
             clean_data = []
             for dataset in datasets["datasets"]:
                 clean_data.append(
@@ -91,7 +97,7 @@ class Opendatasoft(Api):
         except HTTPError:
             return []
 
-    async def __get_data(self) -> dict:
+    async def build_dataset_list_details(self) -> dict:
         """
         Private async method to get all the datasets from the DataSud API
         :return: All datasets and their count
@@ -100,14 +106,9 @@ class Opendatasoft(Api):
         results = await asyncio.gather(
             *map(self.get_dataset_details, await dataset_list)
         )
-        response = await self.fetch("/datasets?limit=1&offset=0")
+        response = await self.fetch_json("/datasets?limit=1&offset=0")
         count = response["total_count"]
         return {
             "count": count,
             "datasets": [item for sublist in results for item in sublist],
         }
-
-    def get_data(self) -> dict:
-        loop = asyncio.get_event_loop()
-        coroutine = self.__get_data()
-        return loop.run_until_complete(coroutine)

@@ -2,12 +2,17 @@ import asyncio
 from typing import List
 from urllib.error import HTTPError, URLError
 
-from api import Api
 from tools import remove_xml_tags
+from .api import Api
 
 
 class DataSud(Api):
+    __metaclass__ = Api
+
     def __init__(self):
+        """
+        Instantiate the Data Sud API.
+        """
         super().__init__("https://trouver.datasud.fr/api/3/action/")
 
     async def get_dataset_list(self) -> List[str]:
@@ -15,7 +20,7 @@ class DataSud(Api):
         Fetch the list of all datasets available on the DataSud API
         :return: The list of all datasets
         """
-        response = await self.fetch("/package_list")
+        response = await self.fetch_json("/package_list")
         if response["success"]:
             return response["result"]
         else:
@@ -27,7 +32,7 @@ class DataSud(Api):
             if resource["format"] != "CSV":
                 continue
             try:
-                response = await self.fetch(
+                response = await self.fetch_json(
                     f"/datastore_search?resource_id={resource['id']}"
                 )
                 if not response["success"]:
@@ -60,7 +65,7 @@ class DataSud(Api):
         :return: The dataset important details
         """
         try:
-            details = await self.fetch(f"/package_show?id={dataset}")
+            details = await self.fetch_json(f"/package_show?id={dataset}")
         except HTTPError:
             return
 
@@ -90,7 +95,7 @@ class DataSud(Api):
             "columns": columns,
         }
 
-    async def __get_data(self) -> dict:
+    async def build_dataset_list_details(self) -> dict:
         """
         Private async method to get all the datasets from the DataSud API
         :return: All datasets and their count
@@ -104,8 +109,3 @@ class DataSud(Api):
             if result is not None
         ]
         return {"count": len(results), "datasets": results}
-
-    def get_data(self):
-        loop = asyncio.get_event_loop()
-        coroutine = self.__get_data()
-        return loop.run_until_complete(coroutine)
