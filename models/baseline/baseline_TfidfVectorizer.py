@@ -1,12 +1,15 @@
 import json
-from typing import Tuple, List
+from typing import Tuple, List, Dict
 
+import sklearn
 from scipy.sparse import csr_matrix
+from sklearn.cluster import AgglomerativeClustering
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
 from models.models_tools import filter_data
 from pydantic import BaseModel
 import joblib
+import numpy as np
 
 
 class BaseConfiguration(BaseModel):
@@ -22,6 +25,7 @@ class TfidfBaseline:
         self.file_path: str = file_path
         self.tfidf_matrix: csr_matrix = None
         self.transformed_data: list = []
+        self.transformed_data_ids: list = []
         self.configuration: List[str] = []
         self.tfidf_vectorizer: TfidfVectorizer = None
 
@@ -77,6 +81,7 @@ class TfidfBaseline:
             self.tfidf_matrix[ind : ind + 1], self.tfidf_matrix
         ).flatten()
         related_docs_indices = cosine_similarities.argsort()[: -max_docs - 2 : -1]
+        print(related_docs_indices)
         if verbose:
             print(f'Document "tag" d\'origine :\n{self.transformed_data[ind]}')
             print("")
@@ -87,16 +92,38 @@ class TfidfBaseline:
 
         return related_docs_indices, cosine_similarities[related_docs_indices]
 
-    def compute_tfidf(self, max_features: int, tags_filters=None):
+    def kmean_clustering(
+        self,
+        clustering_model: sklearn.cluster = AgglomerativeClustering(n_clusters=10),
+    ) -> Dict:
+        """
+        Compute cluster given a sklearn clustering model
+        :param clustering_model: A cluster model from sklearn.cluster
+        :return: A dict of clustered datas from the actual embedding
+        """
+        clustering_model.fit(self.tfidf_matrix.toarray())
+        cluster_assignment = clustering_model.labels_
+
+        clustered_sentences = {}
+        for sentence_id, cluster_id in enumerate(cluster_assignment):
+            clustered_sentences[self.transformed_data_ids[sentence_id]] = cluster_id
+
+        return clustered_sentences
+
+    def compute_tfidf(
+        self,
+        max_features: int,
+        tags_filters=None,
+    ):
         """
         Compute the similarity matrix of the tf_idf method on previously given dataset
         (can be changed using .change_file_path(file_path: str) )
         :param max_features: max_features of the TfidfVectorizer
         :param tags_filters: List of tags to include in the tf_idf representation default to
-        ["dataset_name", "keywords", "description", "groups"]
+        ["dataset_name", "keywords", "description"]
         """
         if tags_filters is None:
-            tags_filters = ["dataset_name", "keywords", "description", "groups"]
+            tags_filters = ["dataset_name", "keywords", "description"]
 
         self.configuration = tags_filters
         self.tfidf_vectorizer = TfidfVectorizer(
@@ -115,5 +142,7 @@ class TfidfBaseline:
             sublinear_tf=True,
         )
 
-        self.transformed_data = filter_data(self.file_path, tags_filters).values()
+        filtered_data = filter_data(self.file_path, tags_filters)
+        self.transformed_data = list(filtered_data.values())
+        self.transformed_data_ids = list(filtered_data.keys())
         self.tfidf_matrix = self.tfidf_vectorizer.fit_transform(self.transformed_data)
