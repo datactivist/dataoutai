@@ -3,17 +3,17 @@ import random
 from typing import Dict, Generator, List
 
 
-def _flatten_dict_gen(d: Dict) -> Generator:
+def __flatten_dict_gen(d: Dict) -> Generator:
     for k, v in d.items():
         new_key = k
         if isinstance(v, Dict):
-            yield from _flatten_dict(v).items()
+            yield from __flatten_dict(v).items()
         else:
             yield new_key, v
 
 
-def _flatten_dict(d: Dict) -> Dict:
-    return dict(_flatten_dict_gen(d))
+def __flatten_dict(d: Dict) -> Dict:
+    return dict(__flatten_dict_gen(d))
 
 
 def filter_data(
@@ -35,7 +35,7 @@ def filter_data(
     transformed_data = {}
 
     for d in datasets:
-        flatten_d = _flatten_dict(d)
+        flatten_d = __flatten_dict(d)
 
         for tag in tags:
             if type(flatten_d[tag]) is list:
