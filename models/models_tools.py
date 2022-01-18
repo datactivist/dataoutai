@@ -17,7 +17,7 @@ def __flatten_dict(d: Dict) -> Dict:
 
 
 def filter_data(
-    file_path: str, tags_filters: List[str], random_data: int = None
+    file_path: str, tags_filters: List[str] = None, random_data: int = None
 ) -> Dict[str, str]:
     """
     Filter the datas to the original dataset to string for the tfidf vectorizer
@@ -26,6 +26,8 @@ def filter_data(
     :param random_data: Number of random data picked from the transformed datas
     :return Dict of {"id_data" : filtered_data}
     """
+    if tags_filters is None:
+        tags_filters = ["dataset_name", "keywords", "description"]
 
     with open(file_path, encoding="utf8") as f:
         datas = json.load(f)

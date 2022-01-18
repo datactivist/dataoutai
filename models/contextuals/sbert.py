@@ -50,8 +50,6 @@ class ContextualEmbeddingModel:
         :param random_data: Number of random data picked from the transformed datas
         """
         self.device = device
-        if tags_filters is None:
-            tags_filters = ["dataset_name", "keywords", "description"]
 
         self.configuration = tags_filters
         filtered_data = filter_data(self.file_path, tags_filters, random_data)
