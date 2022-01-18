@@ -1,15 +1,16 @@
 import json
 from typing import Tuple, List, Dict
 
+import numpy
 import sklearn
 from scipy.sparse import csr_matrix
 from sklearn.cluster import AgglomerativeClustering
+from sklearn.decomposition import TruncatedSVD
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
 from models.models_tools import filter_data
 from pydantic import BaseModel
 import joblib
-import numpy as np
 
 
 class BaseConfiguration(BaseModel):
@@ -24,6 +25,7 @@ class TfidfBaseline:
 
         self.file_path: str = file_path
         self.tfidf_matrix: csr_matrix = None
+        self.lsa_matrix: numpy.ndarray = None
         self.transformed_data: list = []
         self.transformed_data_ids: list = []
         self.configuration: List[str] = []
@@ -68,7 +70,7 @@ class TfidfBaseline:
         self.tfidf_vectorizer = None
 
     def get_similarity(
-        self, ind: int = 42, max_docs: int = 5, verbose: bool = True
+        self, ind: int = 42, max_docs: int = 5, verbose: bool = True, lsa: bool = False
     ) -> Tuple[list, list]:
         """
         Get the @max_docs most similar document to the docs number @ind
@@ -76,10 +78,16 @@ class TfidfBaseline:
         :param ind: Index of the document from which to calculate the similarity
         :param max_docs: Max numbers of similar document returned
         :return Tuple of : indexes of most similar documents, cosine similarity of said documents
+        :param lsa: Choose to compute the similarity with LSA or not
         """
-        cosine_similarities = linear_kernel(
-            self.tfidf_matrix[ind : ind + 1], self.tfidf_matrix
-        ).flatten()
+        if lsa:
+            if self.lsa_matrix is None:
+                self.compute_lsa()
+            matrix = self.tfidf_matrix
+        else:
+            matrix = self.lsa_matrix
+
+        cosine_similarities = linear_kernel(matrix[ind : ind + 1], matrix).flatten()
         related_docs_indices = cosine_similarities.argsort()[: -max_docs - 2 : -1]
         print(related_docs_indices)
         if verbose:
@@ -95,13 +103,20 @@ class TfidfBaseline:
     def kmean_clustering(
         self,
         clustering_model: sklearn.cluster = AgglomerativeClustering(n_clusters=10),
+        lsa: bool = False,
     ) -> Dict:
         """
         Compute cluster given a sklearn clustering model
         :param clustering_model: A cluster model from sklearn.cluster
         :return: A dict of clustered datas from the actual embedding
+        :param lsa: Choose to compute the similarity with LSA or not
         """
-        clustering_model.fit(self.tfidf_matrix.toarray())
+        if lsa:
+            if self.lsa_matrix is None:
+                self.compute_lsa()
+            clustering_model.fit(self.lsa_matrix)
+        else:
+            clustering_model.fit(self.tfidf_matrix.toarray())
         cluster_assignment = clustering_model.labels_
 
         clustered_sentences = {}
@@ -110,10 +125,13 @@ class TfidfBaseline:
 
         return clustered_sentences
 
+    def compute_lsa(self):
+        self.lsa_matrix = TruncatedSVD(
+            n_components=50, n_iter=5, random_state=42
+        ).fit_transform(self.tfidf_matrix)
+
     def compute_tfidf(
-        self,
-        max_features: int,
-        tags_filters=None,
+        self, max_features: int, tags_filters: List[str] = None, lsa: bool = False
     ):
         """
         Compute the similarity matrix of the tf_idf method on previously given dataset
@@ -121,10 +139,8 @@ class TfidfBaseline:
         :param max_features: max_features of the TfidfVectorizer
         :param tags_filters: List of tags to include in the tf_idf representation default to
         ["dataset_name", "keywords", "description"]
+        :param lsa: Choose to compute LSA or not
         """
-        if tags_filters is None:
-            tags_filters = ["dataset_name", "keywords", "description"]
-
         self.configuration = tags_filters
         self.tfidf_vectorizer = TfidfVectorizer(
             input="content",
@@ -146,3 +162,6 @@ class TfidfBaseline:
         self.transformed_data = list(filtered_data.values())
         self.transformed_data_ids = list(filtered_data.keys())
         self.tfidf_matrix = self.tfidf_vectorizer.fit_transform(self.transformed_data)
+
+        if lsa:
+            self.compute_lsa()

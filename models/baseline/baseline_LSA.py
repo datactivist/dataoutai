@@ -5,6 +5,16 @@ import numpy as np
 from sklearn.decomposition import TruncatedSVD
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from models.models_tools import filter_data
+
+
+class LSABaseline:
+    def __init__(self, file_path: str = ""):
+
+        self.file_path: str = file_path
+        self.lsa_embeding = None
+        self.transformed_data: list = []
+        self.transformed_data_ids: list = []
 
 
 def load_json(filepath: str) -> dict:
@@ -72,7 +82,7 @@ if __name__ == "__main__":
     datasets = load_json(f"../../data/{args.source}.json")
 
     corpus = build_corpus_from_dataset(datasets)
-
+    corpus = filter_data()
     train_sample, test_sample = train_test_split(corpus, test_size=10)
 
     vectorizer = TfidfVectorizer(max_df=0.1)
