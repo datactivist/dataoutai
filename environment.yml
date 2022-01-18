@@ -24,5 +24,6 @@ dependencies:
   - torchaudio=0.10.1
   - torchvision=0.11.2
   - cudatoolkit=11.3
+  - jupyter
   - pip:
     - black
