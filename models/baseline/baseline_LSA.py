@@ -1,87 +1,59 @@
-import json
-import random
+from typing import Tuple, List, Dict, Optional
 
 import numpy as np
+import sklearn
+from sklearn.cluster import AgglomerativeClustering
 from sklearn.decomposition import TruncatedSVD
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+
+from models.baseline import TfidfBasedBaseline
 
 
-def load_json(filepath: str) -> dict:
-    with open(filepath, encoding="utf8") as f:
-        data = json.load(f)
-    return data
+class LSABaseline(TfidfBasedBaseline):
+    def __init__(self, file_path: str = ""):
+        super().__init__(file_path)
+        self.lsa_matrix: Optional[np.ndarray] = None
 
+    def compute_lsa(self):
+        self.lsa_matrix = TruncatedSVD(
+            n_components=50, n_iter=5, random_state=42
+        ).fit_transform(self.tfidf_matrix)
 
-def build_corpus_from_dataset(json_dump):
-    c = []
-    for dataset in json_dump["datasets"]:
-        if dataset["metadata"]["description"] == "":
-            continue
-        if dataset["metadata"]["keywords"]:
-            keywords = " ".join(dataset["metadata"]["keywords"])
-        else:
-            keywords = ""
-        author = dataset.get("author", "")
-        licence = dataset.get("licence", "")
-        geographic_hold = dataset.get("geographic_hold", "")
-        c.append(
-            f"{dataset['dataset_name']} {author if author else ''} {licence if licence else ''} "
-            f"{geographic_hold if geographic_hold else ''} {dataset['metadata']['description']} "
-            f"{keywords if keywords else ''}"
-        )
-    return c
+    def get_similarity(
+        self, ind: int = 42, max_docs: int = 5, verbose: bool = True
+    ) -> Tuple[list, list]:
+        if self.lsa_matrix is None:
+            self.compute_lsa()
+        return self.compute_similarity(self.lsa_matrix, ind, max_docs, verbose)
 
+    def kmean_clustering(
+        self, clustering_model: sklearn.cluster = AgglomerativeClustering(n_clusters=10)
+    ) -> Dict:
+        if self.lsa_matrix is None:
+            self.compute_lsa()
+        clustering_model.fit(self.lsa_matrix)
+        cluster_assignment = clustering_model.labels_
 
-def train_test_split(data, test_size=5):
-    random.seed(42)
-    test_data = random.sample(data, test_size)
-    train_data = []
-    for text in corpus:
-        if text in test_data:
-            continue
-        train_data.append(text)
-    return train_data, test_data
+        clustered_sentences = {}
+        for sentence_id, cluster_id in enumerate(cluster_assignment):
+            clustered_sentences[self.transformed_data_ids[sentence_id]] = cluster_id
 
+        return clustered_sentences
 
-def find_closest_match(
-    dataset, tfidf_transformer, lsa_transformer, lsa_transforms, text
-):
-    vectorized_test = tfidf_transformer.transform([text])
-    lsa_test = lsa_transformer.transform(vectorized_test)
-    results = cosine_similarity(lsa_transforms, lsa_test)
-    results = results.reshape(len(results))
-    index = np.argsort(results)
-    print(results[index[-1]])
-    return dataset["datasets"][index[-1]]
+    def compute(self, max_features: int, tags_filters: List[str] = None):
+        super().compute(max_features, tags_filters)
+        self.compute_lsa()
 
 
 if __name__ == "__main__":
-    import argparse
+    import pickle
+    from sklearn.cluster import KMeans
 
-    parser = argparse.ArgumentParser(description="Fetch data from APIs")
-    parser.add_argument(
-        "-s",
-        "--source",
-        help="Use specific data source",
-        choices=["datasud", "opendatasoft", "datagouv"],
-        required=True,
-    )
-    args = parser.parse_args()
+    lsa = LSABaseline("../../data/datasud.json")
 
-    datasets = load_json(f"../../data/{args.source}.json")
-
-    corpus = build_corpus_from_dataset(datasets)
-
-    train_sample, test_sample = train_test_split(corpus, test_size=10)
-
-    vectorizer = TfidfVectorizer(max_df=0.1)
-    X = vectorizer.fit_transform(train_sample)
-
-    lsa = TruncatedSVD(n_components=50, n_iter=5, random_state=42)
-    lsa_t = lsa.fit_transform(X)
-
-    for test in test_sample:
-        print(test)
-        print(find_closest_match(datasets, vectorizer, lsa, lsa_t, test))
-        print()
+    lsa.compute(500)
+    clusters = lsa.kmean_clustering(KMeans(n_clusters=15))
+    print(clusters)
+    with open(
+        r"../../models/evaluation/clusters/lsa_clusters_datasud_km_15.pkl", "wb"
+    ) as output_file:
+        pickle.dump(clusters, output_file)
