@@ -5,7 +5,8 @@ from typing import Dict
 import numpy as np
 import sklearn
 
-from gensim.models import Word2Vec
+from gensim.utils import tokenize
+from gensim.models import Word2Vec, KeyedVectors
 from sklearn.cluster import AgglomerativeClustering
 
 from models.models_tools import filter_data
@@ -19,8 +20,6 @@ class BaselineWord2Vec:
         self.transformed_data_ids: list = []
         self.vectorizer = None
         self.embedding = []
-
-        self.load_and_prepare()
 
     def load_json(self) -> None:
         """
@@ -59,7 +58,10 @@ class BaselineWord2Vec:
 
         self.load_json()
         filtered_data = filter_data(self.filepath, tags_filters, random_data)
-        self.transformed_data = list(filtered_data.values())
+        self.transformed_data = [
+            list(tokenize(dataset, deacc=True, lowercase=True))
+            for dataset in list(filtered_data.values())
+        ]
         self.transformed_data_ids = list(filtered_data.keys())
         self.vectorize()
 
@@ -104,6 +106,7 @@ class BaselineWord2Vec:
 
         :return: None
         """
+
         self.vectorizer = Word2Vec(
             self.transformed_data, min_count=1, vector_size=100, window=10
         )
