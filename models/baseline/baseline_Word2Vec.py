@@ -6,7 +6,7 @@ import numpy as np
 import sklearn
 
 from gensim.utils import tokenize
-from gensim.models import Word2Vec, KeyedVectors
+from gensim.models import Word2Vec
 from sklearn.cluster import AgglomerativeClustering
 
 from models.models_tools import filter_data
