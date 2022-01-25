@@ -4,6 +4,7 @@ from random import choice
 from typing import Dict
 
 import networkx as nx
+import numpy as np
 from bokeh.layouts import column, row
 from bokeh.models import (
     Scatter,
@@ -13,8 +14,15 @@ from bokeh.models import (
     Select,
     Slider,
     TextInput,
+    Label,
 )
 from bokeh.plotting import from_networkx, figure, curdoc
+from sklearn.metrics import fowlkes_mallows_score
+from sklearn.metrics.cluster import (
+    homogeneity_completeness_v_measure,
+    contingency_matrix,
+)
+from sklearn.preprocessing import LabelEncoder
 
 file_path = "../data/datasud.json"
 TRAINING_METHOD_DEFAULT = "tfidf"
@@ -41,25 +49,77 @@ def build_gold_groups_producers():
         datasets = json.load(f)
     datasets = datasets["datasets"]
     groups = set()
+    ds_groups = dict()
     producer_nb_datasets = dict()
     for d in datasets:
         [groups.add(group) for group in d["metadata"]["groups"]]
+        ds_groups[d["dataset_name"]] = d["metadata"]["groups"]
         producer_nb_datasets[d["author"]] = producer_nb_datasets.get("author", 0) + 1
     producer_list = list(
         dict(
             sorted(producer_nb_datasets.items(), key=lambda item: item[1], reverse=True)
         ).keys()
     )
-    return groups, producer_list
+    return groups, producer_list, ds_groups
+
+
+gold_groups, producers, dataset_groups = build_gold_groups_producers()
+
+
+def evaluate_clusters():
+    gold = []
+    pred = []
+    le = LabelEncoder()
+    all_group = list({x for group_list in dataset_groups.values() for x in group_list})
+    le.fit(all_group)
+    for dataset, groups in dataset_groups.items():
+        if len(groups) == 1:
+            gold.append(le.transform(groups)[0])
+            pred.append(current_state.pred_groups[dataset])
+
+    homogeneity, completeness, v_measure = homogeneity_completeness_v_measure(
+        gold, pred
+    )
+    fowlkes_mallows = fowlkes_mallows_score(gold, pred)
+    contingency = contingency_matrix(gold, pred)
+    purity = np.sum(np.amax(contingency, axis=0)) / np.sum(contingency)
+
+    return {
+        "homogeneity": homogeneity,
+        "completeness": completeness,
+        "v_measure": v_measure,
+        "fowlkes_mallows": fowlkes_mallows,
+        "purity": purity,
+    }
+
+
+def build_file_name():
+    return (
+        f"../models/evaluation/clusters/"
+        f"{current_state.method}_clusters_datasud_{current_state.clustering_method}_{current_state.nb_clusters}.pkl"
+    )
 
 
 def load_pickle_dump():
-    with open(
-        f"../models/evaluation/clusters/"
-        f"{current_state.method}_clusters_datasud_{current_state.clustering_method}_{current_state.nb_clusters}.pkl",
-        "rb",
-    ) as pickle_dump:
+    with open(build_file_name(), "rb") as pickle_dump:
         current_state.pred_groups = load(pickle_dump)
+
+
+plot = figure(
+    title="Graph visualization",
+    sizing_mode="stretch_both",
+    # y_range=(-1.1, 1.1),
+    # x_range=(-1.1, 1.1),
+)
+
+
+score_label = Label(
+    x=0,
+    y=0,
+    x_units="screen",
+    y_units="screen",
+    text="",
+)
 
 
 def draw():
@@ -101,22 +161,34 @@ def draw():
     network_graph.inspection_policy = NodesAndLinkedEdges()
     plot.renderers.append(network_graph)
 
+    """
+    {
+        "homogeneity": homogeneity,
+        "completeness": completeness,
+        "v_measure": v_measure,
+        "fowlkes_mallows": fowlkes_mallows,
+        "purity": purity,
+    }
+    """
+    results = evaluate_clusters()
+    score_label.text = (
+        f"Homogeneity: {results['homogeneity']:0.4f}\n"
+        f"Completeness: {results['completeness']:0.4f}\n"
+        f"V Measure: {results['v_measure']:0.4f}\n"
+        f"Fowlkes Mallows: {results['fowlkes_mallows']:0.4f}\n"
+        f"Purity: {results['purity']:0.4f}"
+    )
+
 
 nx_graph = nx.Graph()
-gold_groups, producers = build_gold_groups_producers()
 
-plot = figure(
-    title="Graph visualization",
-    sizing_mode="scale_both",
-    y_range=(-1.1, 1.1),
-    x_range=(-1.1, 1.1),
-)
 plot.title.text = "Interactive Dataset Clustering Representation"
 
 node_hover_tool = HoverTool(tooltips=[("Dataset name", "@name")])
 plot.toolbar.active_scroll = "auto"
 plot.add_tools(node_hover_tool)
 plot.axis.visible = False
+plot.add_layout(score_label)
 
 training_method_select = Select(
     title="Select the method:",
