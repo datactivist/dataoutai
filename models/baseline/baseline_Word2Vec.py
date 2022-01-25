@@ -6,14 +6,15 @@ import numpy as np
 import sklearn
 
 from gensim.utils import tokenize
-from gensim.models import Word2Vec
+from gensim.models import KeyedVectors
 from sklearn.cluster import AgglomerativeClustering
 
 from models.models_tools import filter_data
 
 
 class BaselineWord2Vec:
-    def __init__(self, filepath: str):
+    def __init__(self, filepath: str, path_to_embeddings: str):
+        self.path_to_embeddings = path_to_embeddings
         self.filepath = filepath
         self.data = []
         self.transformed_data: list = []
@@ -107,11 +108,18 @@ class BaselineWord2Vec:
         :return: None
         """
 
-        self.vectorizer = Word2Vec(
-            self.transformed_data, min_count=1, vector_size=100, window=10
-        )
+        self.vectorizer = KeyedVectors.load_word2vec_format(self.path_to_embeddings)
         self.embedding = [
-            [np.mean([self.vectorizer.wv[word] for word in dataset])]
+            [
+                np.mean(
+                    [
+                        self.vectorizer[word]
+                        if word in self.vectorizer
+                        else self.vectorizer["unk"]
+                        for word in dataset
+                    ]
+                )
+            ]
             for dataset in self.transformed_data
         ]
 
