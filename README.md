@@ -27,7 +27,8 @@ conda deactivate
 ### DataSud
 
 ```python
-from api import DataSud, dump_to_json
+from api import DataSud
+from tools import dump_to_json
 
 data_sud = DataSud()
 datasets = data_sud.get_data()
@@ -37,7 +38,8 @@ dump_to_json("data/datasud.json", datasets)
 ### Data.Gouv
 
 ```python
-from api import DataGouv, dump_to_json
+from api import DataGouv
+from tools import dump_to_json
 
 data_gouv = DataGouv()
 datasets = data_gouv.get_data()
@@ -47,7 +49,8 @@ dump_to_json("data/datagouv.json", datasets)
 ### Opendatasoft
 
 ```python
-from api import Opendatasoft, dump_to_json
+from api import Opendatasoft
+from tools import dump_to_json
 
 open_data_soft = Opendatasoft()
 datasets = open_data_soft.get_data()
